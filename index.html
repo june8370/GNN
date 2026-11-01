@@ -1,128 +1,268 @@
-<!doctype html>
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#101820">
-  <meta name="description" content="GDPD — Global Defence Press Directorate, a public-facing news division of June. Defence, security and international affairs reporting.">
-  <title>GDPD | Global Defence Press Directorate</title>
-  <link rel="icon" type="image/svg+xml" href="Assets/GDPD.svg">
+  <meta name="theme-color" content="#bb1919">
+
+  <meta name="description" content="Global News Network — Breaking news, world affairs, India, Kerala, business, technology and more.">
+
+  <title>GNN | Global News Network</title>
+
+  <link rel="icon" href="Assets/gnn-logo.svg" type="image/svg+xml">
   <link rel="stylesheet" href="style.css">
+
   <script src="script.js" defer></script>
 </head>
-<body>
-  <a class="skip-link" href="#main">Skip to content</a>
-  <div class="topline"><span class="status-dot" aria-hidden="true"></span> PUBLIC NEWS DESK <span class="topline-divider">/</span> A NEWS DIVISION</div>
 
+<body>
+
+  <!-- Breaking news strip -->
+  <div class="breaking-strip">
+    <div class="container breaking-inner">
+      <span class="breaking-label">BREAKING</span>
+      <span id="breakingText">Latest headlines from around the world</span>
+      <span class="breaking-live">● LIVE</span>
+    </div>
+  </div>
+
+  <!-- Main header -->
   <header class="site-header">
-    <a class="brand" href="#home" aria-label="GDPD home">
-      <img src="Assets/GDPD.svg" alt="" class="brand-mark">
-      <span class="brand-copy">
-        <span class="brand-name">GDPD</span>
-        <span class="brand-subtitle">Global Defence Press Directorate</span>
-      </span>
-    </a>
-    <button class="menu-toggle" id="menuToggle" aria-expanded="false" aria-controls="primaryNav" aria-label="Toggle navigation">
-      <span></span><span></span><span></span>
-    </button>
-    <nav class="primary-nav" id="primaryNav" aria-label="Main navigation">
-      <a class="nav-link active" href="#home" data-view="home">Overview</a>
-      <a class="nav-link" href="#news" data-view="news">Latest news</a>
-      <a class="nav-link" href="#about" data-view="about">About GDPD</a>
-    </nav>
+    <div class="container header-inner">
+
+      <a href="#home" class="brand" aria-label="GNN homepage">
+        <span class="brand-box">GNN</span>
+        <span class="brand-full">
+          <strong>GLOBAL NEWS NETWORK</strong>
+          <small>THE WORLD. IN FOCUS.</small>
+        </span>
+      </a>
+
+      <button class="menu-toggle" id="menuToggle"
+              aria-label="Open navigation"
+              aria-expanded="false">
+        ☰
+      </button>
+
+      <nav class="main-nav" id="mainNav">
+        <a href="#home" class="active">Home</a>
+        <a href="#top-stories">Top Stories</a>
+        <a href="#world">World</a>
+        <a href="#india">India</a>
+        <a href="#kerala">Kerala</a>
+        <a href="#business">Business</a>
+        <a href="#technology">Technology</a>
+      </nav>
+
+      <button class="search-toggle" id="searchToggle"
+              aria-label="Open search">
+        🔍
+      </button>
+    </div>
+
+    <div class="search-panel" id="searchPanel">
+      <div class="container search-inner">
+        <input id="searchInput" type="search"
+               placeholder="Search news, topics or sources..."
+               autocomplete="off">
+        <button id="searchButton">Search</button>
+        <button id="closeSearch" aria-label="Close search">✕</button>
+      </div>
+    </div>
   </header>
 
-  <main id="main">
-    <section class="hero" id="home">
-      <div class="hero-copy">
-        <p class="eyebrow">GLOBAL SECURITY · DEFENCE · WORLD AFFAIRS</p>
-        <h1>Clarity in a<br><span>complex world.</span></h1>
-        <p class="hero-description">Public-interest reporting on defence, security and international developments — curated by GDPD, a news division under June.</p>
-        <div class="hero-actions">
-          <a class="button button-primary" href="#news">Explore latest reports <span aria-hidden="true">↗</span></a>
-          <a class="text-link" href="#about">About the newsroom</a>
+  <!-- News navigation -->
+  <div class="section-nav">
+    <div class="container section-nav-inner">
+      <span class="edition">INTERNATIONAL EDITION</span>
+      <span id="currentDate"></span>
+      <span class="edition-right">GNN NEWS DESK</span>
+    </div>
+  </div>
+
+  <main id="home">
+
+    <!-- Hero -->
+    <section class="container hero-section" id="top-stories">
+
+      <div class="section-title">
+        <h1>Top Stories</h1>
+        <span class="title-line"></span>
+      </div>
+
+      <div class="hero-grid">
+
+        <article class="hero-main">
+          <div class="hero-image image-world">
+            <span class="image-label">WORLD</span>
+          </div>
+
+          <div class="hero-content">
+            <span class="category">GLOBAL NEWS</span>
+            <h2>Stay informed. Understand the world.</h2>
+            <p>
+              Discover the latest developments shaping our world,
+              from international affairs to technology and beyond.
+            </p>
+            <a href="#latest" class="read-link">Explore latest reports →</a>
+          </div>
+        </article>
+
+        <div class="hero-side">
+          <article class="feature-card">
+            <div class="feature-image image-india"></div>
+            <div class="feature-content">
+              <span class="category">INDIA</span>
+              <h3>Latest developments from across India</h3>
+              <a href="#india" class="read-link">Read more →</a>
+            </div>
+          </article>
+
+          <article class="feature-card">
+            <div class="feature-image image-tech"></div>
+            <div class="feature-content">
+              <span class="category">TECHNOLOGY</span>
+              <h3>Discover the stories shaping tomorrow</h3>
+              <a href="#technology" class="read-link">Read more →</a>
+            </div>
+          </article>
         </div>
+
       </div>
-      <div class="hero-panel" aria-label="GDPD newsroom information">
-        <div class="panel-top"><span class="panel-label">NEWSROOM BRIEF</span><span class="live-pill"><span></span> LIVE FEED</span></div>
-        <div class="panel-emblem"><img src="Assets/GDPD.svg" alt="GDPD emblem"></div>
-        <p class="panel-title">Global Defence<br>Press Directorate</p>
-        <p class="panel-note">Independent-minded public reporting. Clear sourcing. Context first.</p>
-        <div class="panel-footer"><span>DIVISION</span><strong>JUNE</strong></div>
-      </div>
-      <div class="hero-gridline" aria-hidden="true"></div>
     </section>
 
-    <section class="news-section section-wrap" id="news">
-      <div class="section-heading">
-        <div>
-          <p class="eyebrow">THE NEWS DESK</p>
-          <h2>Latest reports</h2>
-          <p class="section-intro">Stories from selected public news and defence sources. Open the original report for full context.</p>
+    <!-- Latest headlines -->
+    <section class="container latest-section" id="latest">
+
+      <div class="section-title">
+        <h2>Latest News</h2>
+        <span class="title-line"></span>
+        <button class="refresh-button" id="refreshButton">↻ Refresh</button>
+      </div>
+
+      <div class="feed-status">
+        <span class="status-dot"></span>
+        <span id="statusText">Connecting to news desk...</span>
+        <span id="lastUpdated"></span>
+      </div>
+
+      <div class="news-layout">
+
+        <div class="news-main">
+          <div class="category-filter" id="categoryFilter">
+            <button class="filter active" data-category="all">All</button>
+            <button class="filter" data-category="world">World</button>
+            <button class="filter" data-category="india">India</button>
+            <button class="filter" data-category="kerala">Kerala</button>
+            <button class="filter" data-category="business">Business</button>
+            <button class="filter" data-category="technology">Technology</button>
+            <button class="filter" data-category="science">Science</button>
+            <button class="filter" data-category="defence">Defence</button>
+          </div>
+
+          <div class="news-grid" id="newsFeed">
+            <div class="loading">Loading latest reports...</div>
+          </div>
+
+          <div class="results-footer">
+            <span id="resultCount">Loading news...</span>
+            <button id="clearFilters">Clear filters</button>
+          </div>
         </div>
-        <button class="button button-outline refresh-button" id="refreshButton"><span aria-hidden="true">↻</span> Refresh feed</button>
-      </div>
 
-      <div class="feed-status" id="feedStatus" role="status" aria-live="polite">
-        <span class="status-dot" aria-hidden="true"></span><span id="statusText">Preparing the news feed…</span>
-        <span class="status-time" id="lastUpdated"></span>
-      </div>
+        <aside class="news-sidebar">
+          <div class="sidebar-heading">
+            <span>Most Read</span>
+          </div>
 
-      <div class="news-tools">
-        <label class="search-box">
-          <span class="sr-only">Search reports</span>
-          <span class="search-icon" aria-hidden="true">⌕</span>
-          <input id="searchInput" type="search" placeholder="Search headlines, topics or sources…" autocomplete="off">
-          <kbd>/</kbd>
-        </label>
-        <label class="filter-label" for="categoryFilter">Category</label>
-        <select id="categoryFilter">
-          <option value="all">All categories</option>
-          <option value="defence">Defence</option>
-          <option value="security">Security</option>
-          <option value="world">World affairs</option>
-          <option value="technology">Technology</option>
-          <option value="policy">Policy & diplomacy</option>
-        </select>
-        <label class="filter-label" for="sourceFilter">Source</label>
-        <select id="sourceFilter"><option value="all">All sources</option></select>
-      </div>
+          <ol class="most-read" id="mostRead">
+            <li>Loading headlines...</li>
+          </ol>
 
-      <div class="category-chips" aria-label="Quick category filters">
-        <button class="chip active" data-category="all">All reports</button>
-        <button class="chip" data-category="defence">Defence</button>
-        <button class="chip" data-category="security">Security</button>
-        <button class="chip" data-category="world">World affairs</button>
-        <button class="chip" data-category="technology">Technology</button>
-        <button class="chip" data-category="policy">Policy & diplomacy</button>
-      </div>
+          <div class="newsletter">
+            <span class="newsletter-label">GNN BRIEFING</span>
+            <h3>News that matters.</h3>
+            <p>Stay connected with the latest global developments.</p>
+            <a href="#latest">Explore the news →</a>
+          </div>
+        </aside>
 
-      <div class="news-grid" id="newsFeed" aria-live="polite" aria-busy="true">
-        <article class="skeleton-card"><div class="skeleton-line short"></div><div class="skeleton-line"></div><div class="skeleton-line"></div><div class="skeleton-line medium"></div></article>
-        <article class="skeleton-card"><div class="skeleton-line short"></div><div class="skeleton-line"></div><div class="skeleton-line"></div><div class="skeleton-line medium"></div></article>
-        <article class="skeleton-card"><div class="skeleton-line short"></div><div class="skeleton-line"></div><div class="skeleton-line"></div><div class="skeleton-line medium"></div></article>
       </div>
-      <div class="results-footer"><span id="resultCount">Loading reports…</span><button class="text-link" id="clearFilters">Clear filters</button></div>
-      <p class="source-note">GDPD aggregates headlines from third-party public feeds. Headlines and articles remain the property of their publishers. Feed availability may vary; verify important developments with the original source.</p>
     </section>
 
-    <section class="about-section section-wrap" id="about">
-      <div class="about-card">
-        <div class="about-mark"><img src="Assets/GDPD.svg" alt=""></div>
-        <div>
-          <p class="eyebrow">WHO WE ARE</p>
-          <h2>A public news division.</h2>
-          <p>Global Defence Press Directorate (GDPD) is a public-facing news division, focused on making defence, security and international affairs easier to follow. The site gathers reporting from established publishers and public sources, helping readers discover original coverage in one place.</p>
-          <p class="about-principle"><strong>Our editorial principle:</strong> inform the public, attribute sources clearly, and distinguish published reporting from verified fact or official statements.</p>
-        </div>
+    <!-- Category sections -->
+    <section class="container category-section" id="world">
+      <div class="section-title">
+        <h2>World News</h2>
+        <span class="title-line"></span>
       </div>
+      <div class="category-grid" id="worldFeed"></div>
     </section>
+
+    <section class="container category-section" id="india">
+      <div class="section-title">
+        <h2>India News</h2>
+        <span class="title-line"></span>
+      </div>
+      <div class="category-grid" id="indiaFeed"></div>
+    </section>
+
+    <section class="container category-section" id="kerala">
+      <div class="section-title">
+        <h2>Kerala News</h2>
+        <span class="title-line"></span>
+      </div>
+      <div class="category-grid" id="keralaFeed"></div>
+    </section>
+
+    <section class="container category-section" id="business">
+      <div class="section-title">
+        <h2>Business</h2>
+        <span class="title-line"></span>
+      </div>
+      <div class="category-grid" id="businessFeed"></div>
+    </section>
+
+    <section class="container category-section" id="technology">
+      <div class="section-title">
+        <h2>Technology</h2>
+        <span class="title-line"></span>
+      </div>
+      <div class="category-grid" id="technologyFeed"></div>
+    </section>
+
   </main>
 
+  <!-- Footer -->
   <footer class="site-footer">
-    <a class="footer-brand" href="#home"><img src="Assets/GDPD.svg" alt=""><span>GDPD</span></a>
-    <p>Global Defence Press Directorate <span>·</span> A news division under June</p>
-    <p class="copyright">© <span id="year"></span> GDPD. Headlines link to their original publishers.</p>
+    <div class="container footer-top">
+
+      <div class="footer-brand">
+        <span class="brand-box">GNN</span>
+        <div>
+          <strong>GLOBAL NEWS NETWORK</strong>
+          <p>The World. In Focus.</p>
+        </div>
+      </div>
+
+      <div class="footer-links">
+        <a href="#about">About GNN</a>
+        <a href="#editorial">Editorial Standards</a>
+        <a href="#contact">Contact</a>
+        <a href="#privacy">Privacy</a>
+      </div>
+
+    </div>
+
+    <div class="container footer-bottom">
+      <p>
+        GNN aggregates headlines from public news sources.
+        Articles remain the property of their original publishers.
+      </p>
+      <p>© <span id="year"></span> Global News Network</p>
+    </div>
   </footer>
+
 </body>
 </html>

@@ -2,53 +2,50 @@
 (() => {
   "use strict";
 
-  // GDPD NEWS API
+  // Existing GDPD API — retain until a new GNN endpoint is deployed.
   const NEWS_API =
-    "https://gdpd-news-api.advaitchithira.workers.dev/news";
+    "https://gnn-news-engine.advaitchithira.workers.dev/news";
 
-  const CACHE_KEY = "gdpd-news-cache-v4";
+  const CACHE_KEY = "gnn-news-cache-v1";
   const CACHE_TTL = 10 * 60 * 1000;
   const MAX_DISPLAY = 60;
 
   const $ = id => document.getElementById(id);
 
-  const el = {
-    feed: $("newsFeed"),
-    status: $("statusText"),
-    updated: $("lastUpdated"),
-    count: $("resultCount"),
-    search: $("searchInput"),
-    category: $("categoryFilter"),
-    source: $("sourceFilter"),
-    refresh: $("refreshButton"),
-    clear: $("clearFilters"),
-    chips: [...document.querySelectorAll(".chip")],
-    menu: $("primaryNav"),
-    menuToggle: $("menuToggle")
+  const state = {
+    stories: [],
+    category: "all",
+    query: "",
+    loading: false
   };
 
   const CATEGORY_NAMES = {
+    world: "World",
+    india: "India",
+    kerala: "Kerala",
+    business: "Business",
+    technology: "Technology",
+    science: "Science",
     defence: "Defence",
     security: "Security",
-    world: "World affairs",
-    technology: "Technology",
-    policy: "Policy & diplomacy"
+    policy: "Politics & Diplomacy"
   };
-
-  let stories = [];
-  let loading = false;
 
   function cleanText(value) {
     const doc = new DOMParser().parseFromString(
       String(value || ""),
       "text/html"
     );
-    return (doc.body.textContent || "").replace(/\s+/g, " ").trim();
+
+    return (doc.body.textContent || "")
+      .replace(/\s+/g, " ")
+      .trim();
   }
 
   function safeUrl(value) {
     try {
       const url = new URL(value);
+
       return ["https:", "http:"].includes(url.protocol)
         ? url.href
         : "";
@@ -59,22 +56,39 @@
 
   function classify(story) {
     const text =
-      `${story.title} ${story.description} ${story.source}`.toLowerCase();
+      `${story.title} ${story.description} ${story.source}`
+        .toLowerCase();
 
-    if (/\b(ai|artificial intelligence|satellite|cyber|drone|robotics|technology|space force|electronic warfare)\b/.test(text)) {
+    if (/\b(kerala|kochi|thiruvananthapuram|kottayam|malayalam)\b/.test(text)) {
+      return "kerala";
+    }
+
+    if (/\b(india|indian|new delhi|modi|lok sabha|rajya sabha|bharat)\b/.test(text)) {
+      return "india";
+    }
+
+    if (/\b(stock market|stocks|economy|economic|bank|finance|business|trade|market|rupee|inflation|company|companies)\b/.test(text)) {
+      return "business";
+    }
+
+    if (/\b(ai|artificial intelligence|technology|tech|robotics|software|computer|cyber|satellite|space|innovation|smartphone)\b/.test(text)) {
       return "technology";
     }
 
-    if (/\b(diplomacy|summit|treaty|sanction|foreign minister|negotiat|nato|united nations|peace talks|policy|parliament)\b/.test(text)) {
-      return "policy";
+    if (/\b(science|scientist|research|discovery|climate|environment|medical research)\b/.test(text)) {
+      return "science";
     }
 
-    if (/\b(terror|cyberattack|intelligence|espionage|border security|hostage|surveillance|security threat)\b/.test(text)) {
+    if (/\b(defence|defense|military|army|navy|air force|weapon|missile|soldier|warfare)\b/.test(text)) {
+      return "defence";
+    }
+
+    if (/\b(terror|intelligence|espionage|security|cyberattack|hostage)\b/.test(text)) {
       return "security";
     }
 
-    if (/\b(defen[cs]e|military|army|navy|air force|armed forces|weapon|warship|troop|fighter jet|pentagon|combat|missile|warfare|soldier|battlefield)\b/.test(text)) {
-      return "defence";
+    if (/\b(diplomacy|summit|treaty|sanction|foreign minister|negotiation|nato|united nations|peace talks|parliament|election|president|government|minister)\b/.test(text)) {
+      return "policy";
     }
 
     return "world";
@@ -86,15 +100,21 @@
 
     if (!title || !link) return null;
 
-    const rawDate = item.pubDate || item.published || item.updated || "";
+    const rawDate =
+      item.pubDate || item.published || item.updated || "";
 
     return {
       title,
       link,
-      description: cleanText(item.description || item.content || item.summary || "").slice(0, 700),
-      pubDate: rawDate && !Number.isNaN(Date.parse(rawDate))
-        ? new Date(rawDate).toISOString()
-        : "",
+      description: cleanText(
+        item.description || item.content || item.summary || ""
+      ).slice(0, 700),
+
+      pubDate:
+        rawDate && !Number.isNaN(Date.parse(rawDate))
+          ? new Date(rawDate).toISOString()
+          : "",
+
       source: cleanText(item.source || "News source"),
       category: ""
     };
@@ -107,21 +127,33 @@
       .map(normalizeStory)
       .filter(Boolean)
       .filter(story => {
-        const key = story.link.replace(/[?#].*$/, "").replace(/\/+$/, "").toLowerCase();
+        const key = story.link
+          .replace(/[?#].*$/, "")
+          .replace(/\/+$/, "")
+          .toLowerCase();
+
         if (seen.has(key)) return false;
+
         seen.add(key);
         story.category = classify(story);
+
         return true;
       })
       .sort((a, b) =>
-        (Date.parse(b.pubDate) || 0) - (Date.parse(a.pubDate) || 0)
+        (Date.parse(b.pubDate) || 0) -
+        (Date.parse(a.pubDate) || 0)
       );
   }
 
   function readCache() {
     try {
-      const cache = JSON.parse(localStorage.getItem(CACHE_KEY) || "null");
-      return cache && Array.isArray(cache.items) ? cache : null;
+      const cache = JSON.parse(
+        localStorage.getItem(CACHE_KEY) || "null"
+      );
+
+      return cache && Array.isArray(cache.items)
+        ? cache
+        : null;
     } catch {
       return null;
     }
@@ -129,205 +161,292 @@
 
   function saveCache(items) {
     try {
-      localStorage.setItem(CACHE_KEY, JSON.stringify({
-        savedAt: Date.now(),
-        items
-      }));
+      localStorage.setItem(
+        CACHE_KEY,
+        JSON.stringify({
+          savedAt: Date.now(),
+          items
+        })
+      );
     } catch (error) {
-      console.warn("GDPD: cache unavailable", error);
+      console.warn("GNN: cache unavailable", error);
     }
   }
 
   function setStatus(message, timestamp = null) {
-    if (el.status) el.status.textContent = message;
+    $("statusText").textContent = message;
 
-    if (el.updated) {
-      el.updated.textContent = timestamp
-        ? "Updated " + new Date(timestamp).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit"
-          })
-        : "";
+    $("lastUpdated").textContent = timestamp
+      ? "Updated " +
+        new Date(timestamp).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit"
+        })
+      : "";
+  }
+
+  function formatDate(value) {
+    if (!value) return "Date unavailable";
+
+    return new Date(value).toLocaleDateString([], {
+      month: "short",
+      day: "numeric",
+      year: "numeric"
+    });
+  }
+
+  function createStoryCard(story, index = 0) {
+    const card = document.createElement("article");
+    card.className = "news-card";
+    card.style.animationDelay =
+      `${Math.min(index * 25, 250)}ms`;
+
+    const meta = document.createElement("div");
+    meta.className = "card-meta";
+
+    const category = document.createElement("span");
+    category.className = "card-category";
+    category.textContent =
+      CATEGORY_NAMES[story.category] || "World";
+
+    const date = document.createElement("time");
+    date.className = "card-date";
+
+    if (story.pubDate) {
+      date.dateTime = story.pubDate;
     }
+
+    date.textContent = formatDate(story.pubDate);
+
+    meta.append(category, date);
+
+    const heading = document.createElement("h3");
+    const titleLink = document.createElement("a");
+
+    titleLink.href = story.link;
+    titleLink.target = "_blank";
+    titleLink.rel = "noopener noreferrer";
+    titleLink.textContent = story.title;
+
+    heading.append(titleLink);
+
+    const description = document.createElement("p");
+
+    description.textContent = story.description
+      ? story.description.slice(0, 180) +
+        (story.description.length > 180 ? "…" : "")
+      : "Open the original publisher's report for details.";
+
+    const bottom = document.createElement("div");
+    bottom.className = "card-bottom";
+
+    const source = document.createElement("span");
+    source.className = "card-source";
+    source.textContent = story.source;
+
+    const readLink = document.createElement("a");
+    readLink.className = "card-link";
+    readLink.href = story.link;
+    readLink.target = "_blank";
+    readLink.rel = "noopener noreferrer";
+    readLink.textContent = "Read report ↗";
+
+    bottom.append(source, readLink);
+
+    card.append(meta, heading, description, bottom);
+
+    return card;
   }
 
-  function updateSourceOptions() {
-    if (!el.source) return;
-
-    const previous = el.source.value;
-    const sources = [...new Set(stories.map(s => s.source))].sort();
-
-    el.source.replaceChildren(new Option("All sources", "all"));
-
-    sources.forEach(source => {
-      el.source.add(new Option(source, source));
-    });
-
-    if (sources.includes(previous)) el.source.value = previous;
-  }
-
-  function renderStories() {
-    if (!el.feed) return;
-
-    const query = el.search?.value.trim().toLowerCase() || "";
-    const category = el.category?.value || "all";
-    const source = el.source?.value || "all";
-
-    const filtered = stories.filter(story => {
+  function getFilteredStories() {
+    return state.stories.filter(story => {
       const text =
-        `${story.title} ${story.description} ${story.source}`.toLowerCase();
+        `${story.title} ${story.description} ${story.source}`
+          .toLowerCase();
 
-      return (!query || text.includes(query)) &&
-        (category === "all" || story.category === category) &&
-        (source === "all" || story.source === source);
+      const matchesQuery =
+        !state.query || text.includes(state.query);
+
+      const matchesCategory =
+        state.category === "all" ||
+        story.category === state.category;
+
+      return matchesQuery && matchesCategory;
     });
+  }
 
-    el.feed.replaceChildren();
+  function renderFeed() {
+    const feed = $("newsFeed");
+    const filtered = getFilteredStories();
+
+    feed.replaceChildren();
 
     if (!filtered.length) {
       const empty = document.createElement("div");
       empty.className = "empty-state";
 
       const heading = document.createElement("strong");
-      heading.textContent = stories.length
+      heading.textContent = state.stories.length
         ? "No matching reports"
         : "News feed unavailable";
 
       const detail = document.createElement("p");
-      detail.textContent = stories.length
-        ? "Try another search or clear the filters."
-        : "Check the news API URL and try refreshing.";
+      detail.textContent = state.stories.length
+        ? "Try another search or clear your filters."
+        : "Check the news API and try refreshing.";
 
       empty.append(heading, detail);
-      el.feed.append(empty);
+      feed.append(empty);
 
-      if (el.count) {
-        el.count.textContent = stories.length
+      $("resultCount").textContent =
+        state.stories.length
           ? "0 reports match your filters"
           : "No reports available";
-      }
+
       return;
     }
 
-    filtered.slice(0, MAX_DISPLAY).forEach((story, index) => {
-      const card = document.createElement("article");
-      card.className = "news-card";
-      card.style.animationDelay = `${Math.min(index * 25, 250)}ms`;
+    filtered
+      .slice(0, MAX_DISPLAY)
+      .forEach((story, index) => {
+        feed.append(createStoryCard(story, index));
+      });
 
-      const meta = document.createElement("div");
-      meta.className = "card-meta";
+    $("resultCount").textContent =
+      `Showing ${Math.min(filtered.length, MAX_DISPLAY)} of ` +
+      `${filtered.length} matching reports`;
+  }
 
-      const tag = document.createElement("span");
-      tag.className = "category-tag";
-      tag.textContent = CATEGORY_NAMES[story.category] || "World affairs";
+  function renderCategoryFeed(category, elementId) {
+    const container = $(elementId);
 
-      const date = document.createElement("time");
-      date.className = "card-date";
+    if (!container) return;
 
-      if (story.pubDate) {
-        date.dateTime = story.pubDate;
-        date.textContent = new Date(story.pubDate).toLocaleDateString([], {
-          month: "short",
-          day: "numeric",
-          year: "numeric"
-        });
-      } else {
-        date.textContent = "Date unavailable";
-      }
+    const items = state.stories
+      .filter(story => story.category === category)
+      .slice(0, 3);
 
-      meta.append(tag, date);
+    container.replaceChildren();
 
-      const title = document.createElement("h3");
-      title.textContent = story.title;
+    if (!items.length) {
+      const message = document.createElement("p");
+      message.className = "empty-state";
+      message.textContent =
+        `No ${CATEGORY_NAMES[category] || category} reports available yet.`;
 
-      const description = document.createElement("p");
-      description.textContent = story.description
-        ? story.description.slice(0, 180) +
-          (story.description.length > 180 ? "…" : "")
-        : "Open the original publisher's report for details.";
+      container.append(message);
+      return;
+    }
 
-      const bottom = document.createElement("div");
-      bottom.className = "card-bottom";
+    items.forEach((story, index) => {
+      container.append(createStoryCard(story, index));
+    });
+  }
 
-      const sourceLabel = document.createElement("span");
-      sourceLabel.className = "card-source";
-      sourceLabel.textContent = story.source;
+  function renderBreakingNews() {
+    const breaking = state.stories[0];
 
+    if (breaking) {
+      $("breakingText").textContent = breaking.title;
+    }
+  }
+
+  function renderMostRead() {
+    const container = $("mostRead");
+
+    container.replaceChildren();
+
+    state.stories.slice(0, 5).forEach(story => {
+      const item = document.createElement("li");
       const link = document.createElement("a");
-      link.className = "card-link";
+
       link.href = story.link;
       link.target = "_blank";
       link.rel = "noopener noreferrer";
-      link.textContent = "Read report ↗";
+      link.textContent = story.title;
 
-      bottom.append(sourceLabel, link);
-      card.append(meta, title, description, bottom);
-      el.feed.append(card);
+      item.append(link);
+      container.append(item);
     });
 
-    if (el.count) {
-      el.count.textContent =
-        `Showing ${Math.min(filtered.length, MAX_DISPLAY)} of ${filtered.length} matching reports`;
+    if (!state.stories.length) {
+      const item = document.createElement("li");
+      item.textContent = "No headlines available.";
+      container.append(item);
     }
   }
 
-  function syncChips() {
-    el.chips.forEach(chip => {
-      const active = chip.dataset.category === (el.category?.value || "all");
-      chip.classList.toggle("active", active);
-      chip.setAttribute("aria-pressed", String(active));
-    });
+  function renderAll() {
+    renderFeed();
+    renderBreakingNews();
+    renderMostRead();
+
+    renderCategoryFeed("world", "worldFeed");
+    renderCategoryFeed("india", "indiaFeed");
+    renderCategoryFeed("kerala", "keralaFeed");
+    renderCategoryFeed("business", "businessFeed");
+    renderCategoryFeed("technology", "technologyFeed");
   }
 
   async function loadNews({ force = false } = {}) {
-    if (loading) return;
-    loading = true;
+    if (state.loading) return;
 
-    if (el.refresh) {
-      el.refresh.disabled = true;
-      el.refresh.textContent = "Updating…";
-    }
+    state.loading = true;
+
+    const refresh = $("refreshButton");
+    refresh.disabled = true;
+    refresh.textContent = "Updating...";
 
     const cache = readCache();
 
-    if (!force && cache?.items?.length &&
-        Date.now() - cache.savedAt < CACHE_TTL) {
-      stories = uniqueStories(cache.items);
-      updateSourceOptions();
-      setStatus(`Showing saved reports · ${stories.length} stories`, cache.savedAt);
-      renderStories();
+    if (
+      !force &&
+      cache?.items?.length &&
+      Date.now() - cache.savedAt < CACHE_TTL
+    ) {
+      state.stories = uniqueStories(cache.items);
+
+      setStatus(
+        `Showing saved reports · ${state.stories.length} stories`,
+        cache.savedAt
+      );
+
+      renderAll();
       finishLoading();
+
       return;
     }
 
-    if (cache?.items?.length && !stories.length) {
-      stories = uniqueStories(cache.items);
-      updateSourceOptions();
-      renderStories();
+    if (cache?.items?.length && !state.stories.length) {
+      state.stories = uniqueStories(cache.items);
+      renderAll();
     }
 
-    setStatus("Connecting to GDPD news API…");
+    setStatus("Connecting to GNN news desk...");
 
     try {
-      if (NEWS_API.includes("YOUR-WORKER-NAME")) {
-        throw new Error("Set NEWS_API to your actual deployed Cloudflare Worker URL.");
-      }
-
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 20000);
+
+      const timeout = setTimeout(
+        () => controller.abort(),
+        20000
+      );
 
       let response;
+
       try {
         response = await fetch(NEWS_API, {
           cache: "no-store",
           signal: controller.signal
         });
       } finally {
-        clearTimeout(timer);
+        clearTimeout(timeout);
       }
 
       if (!response.ok) {
-        throw new Error(`News API returned HTTP ${response.status}`);
+        throw new Error(
+          `News API returned HTTP ${response.status}`
+        );
       }
 
       const data = await response.json();
@@ -336,142 +455,172 @@
         throw new Error("API response has no items array");
       }
 
-      stories = uniqueStories(data.items);
-      saveCache(stories);
-      updateSourceOptions();
+      state.stories = uniqueStories(data.items);
+
+      saveCache(state.stories);
 
       setStatus(
-        `Loaded ${stories.length} stories from ${data.successfulSources ?? "the available"} sources`,
+        `Loaded ${state.stories.length} stories`,
         data.updatedAt || Date.now()
       );
 
       if (data.unavailableSources?.length) {
-        console.warn("GDPD: unavailable feeds", data.unavailableSources);
+        console.warn(
+          "GNN: unavailable sources",
+          data.unavailableSources
+        );
       }
     } catch (error) {
-      console.error("GDPD news API error:", error);
+      console.error("GNN news API error:", error);
 
       if (cache?.items?.length) {
-        stories = uniqueStories(cache.items);
-        updateSourceOptions();
-        setStatus("Live API unavailable · showing saved reports", cache.savedAt);
+        state.stories = uniqueStories(cache.items);
+
+        setStatus(
+          "Live API unavailable · showing saved reports",
+          cache.savedAt
+        );
       } else {
-        stories = [];
-        setStatus("Unable to load news: " + error.message);
+        state.stories = [];
+
+        setStatus(
+          "Unable to load news: " + error.message
+        );
       }
     }
 
-    renderStories();
+    renderAll();
     finishLoading();
   }
 
   function finishLoading() {
-    loading = false;
+    state.loading = false;
 
-    if (el.refresh) {
-      el.refresh.disabled = false;
-      el.refresh.innerHTML = '<span aria-hidden="true">↻</span> Refresh feed';
-    }
+    const refresh = $("refreshButton");
 
-    if (el.feed) el.feed.setAttribute("aria-busy", "false");
+    refresh.disabled = false;
+    refresh.textContent = "↻ Refresh";
+
+    $("newsFeed").setAttribute("aria-busy", "false");
   }
 
-  // Search and filters
-  el.search?.addEventListener("input", renderStories);
+  // Search
+  function performSearch() {
+    state.query = $("searchInput")
+      .value
+      .trim()
+      .toLowerCase();
 
-  el.category?.addEventListener("change", () => {
-    syncChips();
-    renderStories();
+    renderFeed();
+
+    $("latest").scrollIntoView({
+      behavior: "smooth"
+    });
+  }
+
+  $("searchButton").addEventListener(
+    "click",
+    performSearch
+  );
+
+  $("searchInput").addEventListener("keydown", event => {
+    if (event.key === "Enter") {
+      performSearch();
+    }
   });
 
-  el.source?.addEventListener("change", renderStories);
+  $("searchToggle").addEventListener("click", () => {
+    $("searchPanel").classList.toggle("open");
 
-  el.refresh?.addEventListener("click", () => {
+    if ($("searchPanel").classList.contains("open")) {
+      $("searchInput").focus();
+    }
+  });
+
+  $("closeSearch").addEventListener("click", () => {
+    $("searchPanel").classList.remove("open");
+  });
+
+  // Category filters
+  $("categoryFilter").addEventListener("click", event => {
+    const button = event.target.closest(".filter");
+
+    if (!button) return;
+
+    state.category = button.dataset.category;
+
+    document.querySelectorAll(".filter").forEach(filter => {
+      filter.classList.toggle(
+        "active",
+        filter.dataset.category === state.category
+      );
+    });
+
+    renderFeed();
+  });
+
+  // Clear filters
+  $("clearFilters").addEventListener("click", () => {
+    state.category = "all";
+    state.query = "";
+
+    $("searchInput").value = "";
+
+    document.querySelectorAll(".filter").forEach(filter => {
+      filter.classList.toggle(
+        "active",
+        filter.dataset.category === "all"
+      );
+    });
+
+    renderFeed();
+  });
+
+  // Refresh news
+  $("refreshButton").addEventListener("click", () => {
     loadNews({ force: true });
   });
 
-  el.clear?.addEventListener("click", () => {
-    if (el.search) el.search.value = "";
-    if (el.category) el.category.value = "all";
-    if (el.source) el.source.value = "all";
-    syncChips();
-    renderStories();
-  });
-
-  el.chips.forEach(chip => {
-    chip.addEventListener("click", () => {
-      if (!el.category) return;
-      el.category.value = chip.dataset.category;
-      syncChips();
-      renderStories();
-    });
-  });
-
   // Mobile navigation
-  if (el.menuToggle && el.menu) {
-    el.menuToggle.addEventListener("click", () => {
-      const open = el.menu.classList.toggle("open");
-      el.menuToggle.setAttribute("aria-expanded", String(open));
-    });
-  }
+  const menuToggle = $("menuToggle");
+  const mainNav = $("mainNav");
 
-  document.querySelectorAll(".nav-link").forEach(link => {
+  menuToggle.addEventListener("click", () => {
+    const open = mainNav.classList.toggle("open");
+
+    menuToggle.setAttribute(
+      "aria-expanded",
+      String(open)
+    );
+
+    menuToggle.textContent = open ? "✕" : "☰";
+  });
+
+  mainNav.querySelectorAll("a").forEach(link => {
     link.addEventListener("click", () => {
-      document.querySelectorAll(".nav-link").forEach(item => {
-        item.classList.toggle("active", item === link);
-      });
+      mainNav.classList.remove("open");
 
-      el.menu?.classList.remove("open");
-      el.menuToggle?.setAttribute("aria-expanded", "false");
+      menuToggle.setAttribute(
+        "aria-expanded",
+        "false"
+      );
+
+      menuToggle.textContent = "☰";
     });
   });
 
-  // Smooth in-page navigation
-  document.querySelectorAll('a[href^="#"]').forEach(link => {
-    link.addEventListener("click", event => {
-      const selector = link.getAttribute("href");
-      if (!selector || selector === "#") return;
-
-      const target = document.querySelector(selector);
-      if (!target) return;
-
-      event.preventDefault();
-
-      const reduceMotion = window.matchMedia(
-        "(prefers-reduced-motion: reduce)"
-      ).matches;
-
-      target.scrollIntoView({
-        behavior: reduceMotion ? "auto" : "smooth",
-        block: "start"
-      });
-
-      history.replaceState(null, "", selector);
+  // Date and copyright
+  $("currentDate").textContent =
+    new Date().toLocaleDateString([], {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric"
     });
-  });
 
-  // Keyboard shortcuts
-  document.addEventListener("keydown", event => {
-    const activeTag = document.activeElement?.tagName || "";
+  $("year").textContent = new Date().getFullYear();
 
-    if (event.key === "/" &&
-        !["INPUT", "TEXTAREA", "SELECT"].includes(activeTag) &&
-        !event.ctrlKey && !event.metaKey && !event.altKey &&
-        el.search) {
-      event.preventDefault();
-      el.search.focus();
-      $("news")?.scrollIntoView({ behavior: "smooth" });
-    }
-
-    if (event.key === "Escape" && el.menu?.classList.contains("open")) {
-      el.menu.classList.remove("open");
-      el.menuToggle?.setAttribute("aria-expanded", "false");
-    }
-  });
-
-  const year = $("year");
-  if (year) year.textContent = new Date().getFullYear();
-
-  syncChips();
+  // Initialize
   loadNews();
+
 })();
